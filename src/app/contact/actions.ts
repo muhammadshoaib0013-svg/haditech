@@ -1,12 +1,10 @@
 "use server";
 
 import { contactSchema } from "@/lib/schemas/contact.schema";
-import { Resend } from "resend";
 import { headers } from "next/headers";
-
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { sendEmailNotification } from "@/lib/email";
+import { sendMetaWhatsAppNotification } from "@/lib/whatsapp";
 
 // ─── Rate Limit ───────────────────────────────────────────────────────────────
 const rateLimitMap = new Map<string, number[]>();
@@ -15,85 +13,11 @@ const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 
 export type FormState = {
   success?: boolean;
+  warning?: boolean;
   message?: string;
   errors?: Record<string, string[]>;
 };
 
-// ─── Meta WhatsApp Cloud API Notification ─────────────────────────────────────
-async function notifyViaWhatsApp(data: {
-  name: string;
-  email: string;
-  phone?: string | null;
-  service: string;
-  budget?: string | null;
-  message: string;
-}) {
-  const version = process.env.META_WHATSAPP_API_VERSION || "v25.0";
-  const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
-  const accessToken = process.env.META_WHATSAPP_ACCESS_TOKEN;
-  const to = process.env.WHATSAPP_DEFAULT_TO;
-
-  if (!phoneNumberId || !accessToken || !to) {
-    console.warn(
-      "⚠️ Meta WhatsApp env missing — WhatsApp notification skipped."
-    );
-    return;
-  }
-
-  const clean = (value: string | null | undefined) =>
-    String(value || "").trim();
-
-  const body = [
-    "🔔 NEW INQUIRY — HADITECH",
-    "",
-    `👤 Name: ${clean(data.name)}`,
-    `📧 Email: ${clean(data.email)}`,
-    data.phone ? `📞 Phone: ${clean(data.phone)}` : null,
-    `🛠️ Service: ${clean(data.service)}`,
-    data.budget ? `💰 Budget: ${clean(data.budget)}` : null,
-    "",
-    "💬 Message:",
-    clean(data.message),
-    "",
-    "─────────────────",
-    "Reply here or email to follow up.",
-  ]
-    .filter((line): line is string => Boolean(line))
-    .join("\n")
-    .slice(0, 3900);
-
-  const response = await fetch(
-    `https://graph.facebook.com/${version}/${phoneNumberId}/messages`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to,
-        type: "text",
-        text: {
-          preview_url: false,
-          body,
-        },
-      }),
-    }
-  );
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    console.error("Meta WhatsApp error:", JSON.stringify(result, null, 2));
-    // Form submit fail نہیں ہوگا، صرف WhatsApp notification skip/fail ہوگی
-    return;
-  }
-
-  console.log("✅ Meta WhatsApp notification sent:", result);
-}
-
-// ─── Main form action ─────────────────────────────────────────────────────────
 export async function submitContactForm(
   prevState: FormState | undefined,
   formData: FormData
@@ -119,7 +43,7 @@ export async function submitContactForm(
     validTimestamps.push(now);
     rateLimitMap.set(ip, validTimestamps);
 
-    // Validate
+    // Validate Form Fields
     const rawData = {
       name: formData.get("name"),
       email: formData.get("email"),
@@ -147,11 +71,47 @@ export async function submitContactForm(
       };
     }
 
-    const { name, email, phone, service, budget, message } =
-      validatedData.data;
+    const { name, email, phone, service, budget, message } = validatedData.data;
 
-    // ── 1. WhatsApp instant notification via Meta Cloud API ───────────────────
-    await notifyViaWhatsApp({
+    let leadId: string | null = null;
+    let leadSaveOk = false;
+
+    // 1. Try to save lead in database (Supabase contact_leads table)
+    const supabase = createServerSupabaseClient();
+    if (supabase) {
+      try {
+        const { data: insertData, error: insertError } = await supabase
+          .from("contact_leads")
+          .insert({
+            name,
+            email,
+            phone: phone || null,
+            service,
+            budget: budget || null,
+            message,
+            source: "contact_form",
+            email_status: "pending",
+            whatsapp_status: "pending",
+          })
+          .select("id")
+          .single();
+
+        if (insertError) {
+          console.error("❌ lead save fail:", insertError.message);
+        } else if (insertData) {
+          leadId = insertData.id;
+          leadSaveOk = true;
+          console.log("✅ lead save ok, id:", leadId);
+        }
+      } catch (err) {
+        console.error("❌ lead save fail exception:", err);
+      }
+    } else {
+      console.warn("⚠️ Supabase service client not configured - skipped saving lead");
+    }
+
+    // 2. Send Email Notification
+    const emailResult = await sendEmailNotification({
       name,
       email,
       phone,
@@ -159,56 +119,61 @@ export async function submitContactForm(
       budget,
       message,
     });
+    console.log(`✉️ email status: ${emailResult.ok ? "ok" : "fail"} (${emailResult.reason || "success"})`);
 
-    // ── 2. Resend emails ──────────────────────────────────────────────────────
-    if (resend) {
-      const toEmail =
-        process.env.CONTACT_EMAIL ||
-        process.env.NEXT_PUBLIC_EMAIL ||
-        "haditech313@gmail.com";
+    // 3. Send WhatsApp Notification
+    const whatsappResult = await sendMetaWhatsAppNotification({
+      name,
+      email,
+      phone,
+      service,
+      budget,
+      message,
+      source: "contact_form",
+    });
+    console.log(`💬 whatsapp status: ${whatsappResult.ok ? "ok" : "fail"} (${whatsappResult.reason || "success"})`);
 
-      const siteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL || "https://haditech.com";
+    // 4. Update status in database if lead was saved
+    if (leadSaveOk && leadId && supabase) {
+      try {
+        const { error: updateError } = await supabase
+          .from("contact_leads")
+          .update({
+            email_status: emailResult.ok ? "ok" : "fail",
+            whatsapp_status: whatsappResult.ok ? "ok" : "fail",
+          })
+          .eq("id", leadId);
 
-      // Admin notification email
-      await resend.emails.send({
-        from: "Contact Form <onboarding@resend.dev>",
-        to: toEmail,
-        replyTo: email,
-        subject: `New Project Inquiry: ${service} from ${name}`,
-        text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || "Not provided"}\nService: ${service}\nBudget: ${budget || "Not provided"}\nMessage:\n${message}`,
-      });
-
-      // Auto-reply to client
-      await resend.emails.send({
-        from: "HADITECH Studio <onboarding@resend.dev>",
-        to: email,
-        subject: "Got your message — I'll reply within 24 hours | HADITECH",
-        html: `
-          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#1a1a1a;">
-            <h2 style="color:#000;">Thank you for reaching out, ${name}!</h2>
-            <p>I have received your inquiry regarding <strong>${service}</strong> and am currently reviewing your requirements.</p>
-            <p>You can expect a detailed response within the next <strong>24 hours</strong>.</p>
-            <hr style="border:1px solid #eee;margin:20px 0;"/>
-            <p>In the meantime:</p>
-            <ul>
-              <li>Chat instantly on <a href="https://wa.me/923012475707">WhatsApp (+923012475707)</a></li>
-              <li>Review our <a href="${siteUrl}/services">services &amp; pricing</a></li>
-            </ul>
-            <br/>
-            <p>Best regards,<br/><strong>HADITECH Studio</strong><br/><a href="${siteUrl}">${siteUrl}</a></p>
-          </div>
-        `,
-      });
+        if (updateError) {
+          console.error("❌ failed to update lead statuses:", updateError.message);
+        }
+      } catch (err) {
+        console.error("❌ exception updating lead statuses:", err);
+      }
     }
 
-    return {
-      success: true,
-      message: "Message received! We will be in touch shortly.",
-    };
+    // 5. Construct honest response to the frontend UI
+    const eitherNotificationSucceeded = emailResult.ok || whatsappResult.ok;
+
+    if (eitherNotificationSucceeded) {
+      return {
+        success: true,
+        message: "Message received. Notification sent successfully.",
+      };
+    } else if (leadSaveOk) {
+      return {
+        success: true,
+        warning: true,
+        message: "Message received, but notification delivery needs admin attention.",
+      };
+    } else {
+      return {
+        success: false,
+        message: "Message could not be delivered. Please contact us directly on WhatsApp or email.",
+      };
+    }
   } catch (error) {
     console.error("Contact form error:", error);
-
     return {
       success: false,
       message: "An unexpected error occurred. Please try again.",

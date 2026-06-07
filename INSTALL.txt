@@ -1,6 +1,6 @@
 ============================================================
   HADITECH — COMPLETE UPDATE PACKAGE
-  Admin Panel (Real Save) + Twilio WhatsApp Integration
+  Admin Panel (Real Save) + Meta WhatsApp Integration
 ============================================================
 
 IS PACKAGE MEIN KYA HAI:
@@ -13,32 +13,29 @@ src/app/admin/videos/page.tsx      ← UPDATED: Real SAVE button
 src/app/admin/testimonials/page.tsx← UPDATED: Real SAVE button
 src/app/admin/services/page.tsx    ← UPDATED: Real SAVE button
 src/app/admin/settings/page.tsx    ← UPDATED: Real SAVE + auto-loads current values
-src/app/contact/actions.ts         ← UPDATED: Twilio WhatsApp integration added
-.env.local.example                 ← NEW: Sab environment variables
+src/app/contact/actions.ts         ← UPDATED: Meta WhatsApp Cloud API integration added
+.env.example                       ← UPDATED: Sab environment variables
 
 INSTALL KAISE KARO — 2 STEPS ONLY:
 -------------------------------------
-Step 1: Is package ka "src" folder apne Haditech/src/ mein MERGE karo
-        (Drag and drop in VS Code — MERGE, overwrite nahi)
+Step 1: Run local migration SQL inside Supabase console:
+        supabase/contact_leads.sql
 
-Step 2: .env.local.example copy karo, naam badlo to .env.local,
-        Twilio Auth Token fill karo
+Step 2: Add credentials to your .env.local file:
+        RESEND_API_KEY, META_WHATSAPP_ACCESS_TOKEN, WHATSAPP_DEFAULT_TO
 
-TWILIO AUTH TOKEN KAHAN SE MILEGA:
+META WHATSAPP ACCESS TOKEN KAHAN SE MILEGA:
 ------------------------------------
-1. https://console.twilio.com login karo
-2. Dashboard pe "Account Info" section mein
-3. "Auth Token" ke saamne "Copy" dabao
-4. .env.local mein TWILIO_AUTH_TOKEN= ke baad paste karo
+1. Meta Developer Console login karo (developers.facebook.com)
+2. Setup WhatsApp Cloud API on your App dashboard
+3. Copy Access Token & Phone Number ID
+4. .env.local mein paste karo
 
 TEST KARNA:
 -----------
 1. npm run dev
 2. http://localhost:3000/admin → Password: haditech2025
-3. Form fill karo → SAVE KARO dabao → data.ts update ho jaayegi
-4. Contact form bharo → tumhare WhatsApp +923012475707 pe message aayega
+3. Form fill karo → SAVE KARO dabao → data.ts/Supabase update ho jaayegi
+4. Contact form bharo → WhatsApp default recipient pe message aayega
 
-WORKFLOW (PRODUCTION):
------------------------
-Local mein admin panel se update → git push → Vercel 90sec mein live
 ============================================================

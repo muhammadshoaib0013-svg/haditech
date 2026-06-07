@@ -6,8 +6,9 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { FadeInSection } from '@/components/animations/FadeInSection';
-import { Mail, MessageCircle, Clock, CheckCircle2 } from 'lucide-react';
+import { Mail, MessageCircle, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { submitContactForm } from './actions';
+import { normalizeWhatsAppNumber } from '@/lib/whatsapp';
 import toast from 'react-hot-toast';
 
 interface ContactFormProps {
@@ -40,6 +41,7 @@ function SubmitButton() {
 export default function ContactForm({ content, services }: ContactFormProps) {
   const [state, formAction] = useFormState(submitContactForm, {
     success: false,
+    warning: false,
     message: "",
     errors: {},
   });
@@ -48,12 +50,25 @@ export default function ContactForm({ content, services }: ContactFormProps) {
 
   useEffect(() => {
     if (state?.success) {
-      toast.success(state.message || "Message sent successfully!");
+      if (state.warning) {
+        toast(state.message || "Message received with warnings.", {
+          icon: '⚠️',
+          duration: 6000,
+        });
+      } else {
+        toast.success(state.message || "Message sent successfully!");
+      }
       formRef.current?.reset();
     } else if (state?.message && !state?.success) {
       toast.error(state.message);
     }
   }, [state]);
+
+  const whatsappUrl = (content.whatsappLink && content.whatsappLink.startsWith('https://wa.me'))
+    ? content.whatsappLink
+    : `https://wa.me/${normalizeWhatsAppNumber(content.whatsappNumber || "923012475707")}`;
+
+  const emailUrl = content.email ? `mailto:${content.email}` : "mailto:haditech313@gmail.com";
 
   return (
     <div className="flex flex-col gap-12 pb-12">
@@ -70,11 +85,25 @@ export default function ContactForm({ content, services }: ContactFormProps) {
           <GlowCard className="p-6 md:p-8">
             {state?.success ? (
               <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
-                <div className="w-16 h-16 bg-success/20 text-success rounded-full flex items-center justify-center">
-                  <CheckCircle2 size={32} />
-                </div>
-                <h3 className="text-2xl font-bold">Message Received!</h3>
-                <p className="text-muted-foreground">We'll be in touch shortly to discuss your project.</p>
+                {state.warning ? (
+                  <>
+                    <div className="w-16 h-16 bg-warning/20 text-warning rounded-full flex items-center justify-center">
+                      <AlertTriangle size={32} />
+                    </div>
+                    <h3 className="text-2xl font-bold text-warning">Message Received with Warning</h3>
+                    <p className="text-muted-foreground max-w-md">
+                      {state.message || "Your message was saved, but email or WhatsApp notification failed. Please reach out to us directly."}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-16 h-16 bg-success/20 text-success rounded-full flex items-center justify-center">
+                      <CheckCircle2 size={32} />
+                    </div>
+                    <h3 className="text-2xl font-bold">Message Received!</h3>
+                    <p className="text-muted-foreground">{state.message || "We'll be in touch shortly to discuss your project."}</p>
+                  </>
+                )}
                 <button 
                   onClick={() => window.location.reload()} 
                   className="text-primary mt-4 underline underline-offset-4"
@@ -178,8 +207,8 @@ export default function ContactForm({ content, services }: ContactFormProps) {
         </FadeInSection>
 
         <FadeInSection delay={0.2} className="lg:col-span-2 space-y-6">
-          {content.whatsappLink && (
-            <a href={content.whatsappLink} target="_blank" rel="noreferrer" className="block">
+          {whatsappUrl && (
+            <a href={whatsappUrl} target="_blank" rel="noreferrer" className="block">
               <GlowCard className="p-6 flex items-center gap-4 cursor-pointer hover:border-success/50 transition-colors group">
                 <div className="w-12 h-12 rounded-full bg-success/10 text-success flex items-center justify-center group-hover:scale-110 transition-transform">
                   <MessageCircle size={24} />
@@ -192,8 +221,8 @@ export default function ContactForm({ content, services }: ContactFormProps) {
             </a>
           )}
 
-          {content.email && (
-            <a href={`mailto:${content.email}`} className="block">
+          {emailUrl && (
+            <a href={emailUrl} className="block">
               <GlowCard className="p-6 flex items-center gap-4 cursor-pointer hover:border-primary/50 transition-colors group">
                 <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Mail size={24} />

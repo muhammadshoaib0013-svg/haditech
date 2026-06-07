@@ -1,15 +1,36 @@
 "use client";
 import React from 'react';
 import { motion } from 'framer-motion';
+import { normalizeWhatsAppNumber } from '@/lib/whatsapp';
 
-export const FloatingWhatsAppButton = ({ number, message = "Hi Haditech, I'm interested in working with you!" }: any) => {
-  const href = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
-  
+interface FloatingWhatsAppButtonProps {
+  number?: string;
+  whatsappLink?: string;
+  message?: string;
+}
+
+export const FloatingWhatsAppButton = ({
+  number,
+  whatsappLink,
+  message = "Hi Haditech, I'm interested in working with you!"
+}: FloatingWhatsAppButtonProps) => {
+  let href = "";
+
+  if (whatsappLink && whatsappLink.startsWith("https://wa.me")) {
+    href = whatsappLink;
+  } else if (number) {
+    const cleanNumber = normalizeWhatsAppNumber(number);
+    href = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
+  } else {
+    href = `https://wa.me/923012475707?text=${encodeURIComponent(message)}`;
+  }
+
   return (
     <motion.a
       href={href}
       target="_blank"
       rel="noreferrer"
+      aria-label="Chat with HADITECH on WhatsApp"
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}
       className="fixed bottom-6 right-20 lg:right-20 z-40 w-14 h-14 bg-success text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_hsla(var(--success),0.5)] transition-all hover:scale-110"

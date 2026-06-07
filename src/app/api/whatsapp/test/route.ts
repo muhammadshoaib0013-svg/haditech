@@ -1,60 +1,51 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { sendMetaWhatsAppNotification } from "@/lib/whatsapp";
+import { ADMIN_COOKIE_NAME, ADMIN_COOKIE_VALUE } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 
-export async function POST() {
-  try {
-    const version = process.env.META_WHATSAPP_API_VERSION || "v22.0";
-    const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
-    const accessToken = process.env.META_WHATSAPP_ACCESS_TOKEN;
-    const to = process.env.WHATSAPP_DEFAULT_TO;
+function checkAuth(request: NextRequest) {
+  const cookie = request.cookies.get(ADMIN_COOKIE_NAME);
+  return cookie?.value === ADMIN_COOKIE_VALUE;
+}
 
-    if (!phoneNumberId || !accessToken || !to) {
+export async function POST(request: NextRequest) {
+  if (!checkAuth(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const result = await sendMetaWhatsAppNotification({
+      name: "TEST USER",
+      email: "test@haditech.com",
+      phone: "+1234567890",
+      service: "Test Service",
+      budget: "$5k - $10k",
+      message: "This is a diagnostic test message from your HADITECH admin panel.",
+      source: "admin_test",
+    });
+
+    if (!result.ok) {
       return NextResponse.json(
         {
           success: false,
-          error:
-            "Missing WhatsApp env variables. Check META_WHATSAPP_PHONE_NUMBER_ID, META_WHATSAPP_ACCESS_TOKEN, WHATSAPP_DEFAULT_TO",
+          error: result.reason,
+          metaError: result.providerError || undefined,
         },
-        { status: 500 }
+        { status: result.providerStatus || 500 }
       );
     }
 
-    const response = await fetch(
-      `https://graph.facebook.com/${version}/${phoneNumberId}/messages`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          to,
-          type: "template",
-          template: {
-            name: "hello_world",
-            language: {
-              code: "en_US",
-            },
-          },
-        }),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { success: false, metaError: data },
-        { status: response.status }
-      );
-    }
-
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({
+      success: true,
+      data: result.providerResponse,
+    });
   } catch (error) {
     return NextResponse.json(
-      { success: false, error: "Failed to send WhatsApp test message." },
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to send WhatsApp test message.",
+      },
       { status: 500 }
     );
   }

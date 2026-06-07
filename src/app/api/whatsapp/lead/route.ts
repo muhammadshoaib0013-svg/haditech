@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sendMetaWhatsAppNotification } from "@/lib/whatsapp";
 
 export const runtime = "nodejs";
 
@@ -11,71 +12,38 @@ export async function POST(req: Request) {
     const phone = body.phone || "Not provided";
     const service = body.service || "Not provided";
     const message = body.message || "No message";
+    const budget = body.budget || "Not provided";
 
-    const version = process.env.META_WHATSAPP_API_VERSION || "v25.0";
-    const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
-    const accessToken = process.env.META_WHATSAPP_ACCESS_TOKEN;
-    const to = process.env.WHATSAPP_DEFAULT_TO;
+    const result = await sendMetaWhatsAppNotification({
+      name,
+      email,
+      phone,
+      service,
+      budget,
+      message,
+      source: "api_route_lead",
+    });
 
-    if (!phoneNumberId || !accessToken || !to) {
+    if (!result.ok) {
       return NextResponse.json(
         {
           success: false,
-          error: "WhatsApp environment variables are missing.",
+          error: result.reason,
+          metaError: result.providerError || undefined,
         },
-        { status: 500 }
-      );
-    }
-
-    const whatsappText =
-      `🚀 New Portfolio Lead\n\n` +
-      `👤 Name: ${name}\n` +
-      `📧 Email: ${email}\n` +
-      `📞 Phone: ${phone}\n` +
-      `🛠 Service: ${service}\n\n` +
-      `💬 Message:\n${message}`;
-
-    const response = await fetch(
-      `https://graph.facebook.com/${version}/${phoneNumberId}/messages`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          to,
-          type: "text",
-          text: {
-            preview_url: false,
-            body: whatsappText,
-          },
-        }),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(
-        {
-          success: false,
-          metaError: data,
-        },
-        { status: response.status }
+        { status: result.providerStatus || 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      data,
+      data: result.providerResponse,
     });
   } catch (error) {
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to send WhatsApp lead notification.",
+        error: error instanceof Error ? error.message : "Failed to send WhatsApp lead notification.",
       },
       { status: 500 }
     );

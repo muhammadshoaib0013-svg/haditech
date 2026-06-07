@@ -10,6 +10,7 @@ import { FloatingWhatsAppButton } from "@/components/ui/FloatingWhatsAppButton"
 export function AppLayoutWrapper({ 
   children, 
   whatsappNumber,
+  whatsappLink,
   brandName,
   tagline,
   twitterUrl,
@@ -20,6 +21,7 @@ export function AppLayoutWrapper({
 }: { 
   children: React.ReactNode, 
   whatsappNumber: string,
+  whatsappLink?: string,
   brandName?: string,
   tagline?: string,
   twitterUrl?: string,
@@ -55,7 +57,7 @@ export function AppLayoutWrapper({
         </main>
       </div>
       <ScrollToTopButton />
-      <FloatingWhatsAppButton number={whatsappNumber} message="Hello HADITECH, I want a SaaS website development service." />
+      <FloatingWhatsAppButton number={whatsappNumber} whatsappLink={whatsappLink} message="Hello HADITECH, I want a SaaS website development service." />
     </>
   )
 }

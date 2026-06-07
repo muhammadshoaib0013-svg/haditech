@@ -17,7 +17,8 @@ const TABLES = [
   'footer_sections',
   'page_content',
   'portfolio_services',
-  'seo_settings'
+  'seo_settings',
+  'contact_leads'
 ]
 
 export async function GET(request: NextRequest) {

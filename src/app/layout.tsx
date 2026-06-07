@@ -207,6 +207,7 @@ export default async function RootLayout({
           }} />
           <AppLayoutWrapper 
             whatsappNumber={settings.whatsappNumber}
+            whatsappLink={settings.whatsappLink}
             brandName={settings.brandName}
             tagline={settings.tagline}
             twitterUrl={settings.twitterUrl}

@@ -64,15 +64,15 @@ export default function ProductionCMSPage() {
           </div>
         </AdminCard>
 
-        {/* Option 3: Resend & Twilio Integration for Lead Routing */}
+        {/* Option 3: Resend & Meta WhatsApp Integration for Lead Routing */}
         <AdminCard title="📩 Production Lead-Routing Setup" color="#8b5cf6">
           <p style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.6, margin: '0 0 12px' }}>
-            For contact forms and lead capture, the current system supports Resend emails and Twilio WhatsApp alerts.
+            For contact forms and lead capture, the current system supports Resend emails and Meta WhatsApp alerts.
             In production, ensure these environment variables are added to your hosting panel (e.g. Vercel dashboard):
           </p>
           <ul style={{ color: '#94a3b8', fontSize: 12, lineHeight: 1.7, paddingLeft: 18, margin: 0 }}>
             <li><code style={{ color: '#8b5cf6' }}>RESEND_API_KEY</code> — for routing inquiries to your professional email.</li>
-            <li><code style={{ color: '#8b5cf6' }}>TWILIO_ACCOUNT_SID</code>, <code style={{ color: '#8b5cf6' }}>TWILIO_AUTH_TOKEN</code>, <code style={{ color: '#8b5cf6' }}>TWILIO_WHATSAPP_NUMBER</code> — for driving WhatsApp alerts.</li>
+            <li><code style={{ color: '#8b5cf6' }}>WHATSAPP_PROVIDER=meta</code>, <code style={{ color: '#8b5cf6' }}>META_WHATSAPP_ACCESS_TOKEN</code>, <code style={{ color: '#8b5cf6' }}>META_WHATSAPP_PHONE_NUMBER_ID</code>, <code style={{ color: '#8b5cf6' }}>WHATSAPP_DEFAULT_TO</code> — for Meta WhatsApp Cloud API alerts.</li>
           </ul>
         </AdminCard>
 

@@ -24,11 +24,20 @@ export default function AdminSettingsPage() {
     { label: 'NEXT_PUBLIC_SUPABASE_URL', ok: false, note: 'Checking...' },
     { label: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', ok: false, note: 'Checking...' },
     { label: 'SUPABASE_SERVICE_ROLE_KEY', ok: false, note: 'Checking...' },
+    { label: 'RESEND_API_KEY', ok: false, note: 'Checking...' },
+    { label: 'META_WHATSAPP_ACCESS_TOKEN', ok: false, note: 'Checking...' },
   ])
   const [healthData, setHealthData] = useState<HealthResponse | null>(null)
   const [healthLoading, setHealthLoading] = useState(true)
   const [sqlData, setSqlData] = useState<SqlResponse | null>(null)
   const [copyState, setCopyState] = useState<{ rescue: boolean; schema: boolean; seed: boolean }>({ rescue: false, schema: false, seed: false })
+  
+  // Notification Health states
+  const [whatsappDefaultTo, setWhatsappDefaultTo] = useState('')
+  const [whatsappNormalized, setWhatsappNormalized] = useState('')
+  const [testResult, setTestResult] = useState<any>(null)
+  const [testLoading, setTestLoading] = useState(false)
+  const [testError, setTestError] = useState('')
 
   async function loadData() {
     setHealthLoading(true)
@@ -44,7 +53,11 @@ export default function AdminSettingsPage() {
             { label: 'NEXT_PUBLIC_SUPABASE_URL', ok: cfg.NEXT_PUBLIC_SUPABASE_URL, note: cfg.NEXT_PUBLIC_SUPABASE_URL ? '✅ Set' : '❌ Not set — add to .env.local' },
             { label: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', ok: cfg.NEXT_PUBLIC_SUPABASE_ANON_KEY, note: cfg.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ Set' : '❌ Not set — add to .env.local' },
             { label: 'SUPABASE_SERVICE_ROLE_KEY', ok: cfg.SUPABASE_SERVICE_ROLE_KEY, note: cfg.SUPABASE_SERVICE_ROLE_KEY ? 'Server-only — verified via API routes ✅' : '❌ Not set — add to .env.local' },
+            { label: 'RESEND_API_KEY', ok: cfg.RESEND_API_KEY, note: cfg.RESEND_API_KEY ? '✅ Configured for Email notifications' : '❌ Not set — email notifications will be skipped' },
+            { label: 'META_WHATSAPP_ACCESS_TOKEN', ok: cfg.META_WHATSAPP_ACCESS_TOKEN, note: cfg.META_WHATSAPP_ACCESS_TOKEN ? '✅ Configured for Meta WhatsApp Cloud API' : '❌ Not set — WhatsApp notifications will be skipped' },
           ])
+          setWhatsappDefaultTo(cfg.WAPP_DEFAULT_TO || cfg.WHATSAPP_DEFAULT_TO || 'missing')
+          setWhatsappNormalized(cfg.WHATSAPP_DEFAULT_TO_NORMALIZED || '')
         }
       }
     } catch (e) {
@@ -96,6 +109,27 @@ export default function AdminSettingsPage() {
     }
   }
 
+  async function sendTestNotification() {
+    setTestLoading(true)
+    setTestError('')
+    setTestResult(null)
+    try {
+      const res = await fetch('/api/admin/notifications/test', {
+        method: 'POST',
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setTestResult(data)
+      } else {
+        setTestError(data.error || 'Failed with status ' + res.status)
+      }
+    } catch (e) {
+      setTestError(e instanceof Error ? e.message : 'Unknown network error')
+    } finally {
+      setTestLoading(false)
+    }
+  }
+
   useEffect(() => {
     loadData()
   }, [])
@@ -121,9 +155,10 @@ export default function AdminSettingsPage() {
     { label: 'Footer Table (footer_sections)', ok: healthData?.tables?.footer_sections?.exists || false },
     { label: 'Page Content Table (page_content)', ok: healthData?.tables?.page_content?.exists || false },
     { label: 'SEO Settings Table (seo_settings)', ok: healthData?.tables?.seo_settings?.exists || false },
+    { label: 'Contact Leads Table (contact_leads)', ok: healthData?.tables?.contact_leads?.exists || false },
   ]
 
-  const totalTables = 10
+  const totalTables = 11
   const activeTables = healthData?.tables 
     ? Object.values(healthData.tables).filter(t => t.exists).length 
     : 0
@@ -172,7 +207,7 @@ export default function AdminSettingsPage() {
         
         {/* Bucket Status */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#0a0f1e', borderRadius: 10, border: `1.5px solid ${healthData?.storage?.exists ? '#1e3a5f' : '#ef4444'}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#0a0f1e', borderRadius: 10, border: `1.5px solid ${healthData?.storage?.exists ? '#1e3a5f' : '#ef4444'}` }} className="flex justify-between items-center w-full">
             <div>
               <div style={{ color: '#3b82f6', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Storage Bucket</div>
               <div style={{ fontFamily: 'monospace', color: '#f1f5f9', fontSize: 13, fontWeight: 600 }}>haditech-media</div>
@@ -190,7 +225,7 @@ export default function AdminSettingsPage() {
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#0a0f1e', borderRadius: 10, border: `1.5px solid ${healthData?.mediaColumns?.healthy ? '#1e3a5f' : '#ef4444'}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#0a0f1e', borderRadius: 10, border: `1.5px solid ${healthData?.mediaColumns?.healthy ? '#1e3a5f' : '#ef4444'}` }} className="flex justify-between items-center w-full">
             <div>
               <div style={{ color: '#3b82f6', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Media Assets Metadata</div>
               <div style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 600 }}>usage_type, page_key, alt...</div>
@@ -212,7 +247,7 @@ export default function AdminSettingsPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
           {healthData?.tables ? (
             Object.entries(healthData.tables).map(([table, status]) => (
-              <div key={table} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#0a0f1e', borderRadius: 10, border: `1.5px solid ${status.exists ? '#1e3a5f' : '#ef4444'}` }}>
+              <div key={table} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#0a0f1e', borderRadius: 10, border: `1.5px solid ${status.exists ? '#1e3a5f' : '#ef4444'}` }} className="flex justify-between items-center w-full">
                 <span style={{ fontFamily: 'monospace', color: '#93c5fd', fontSize: 13, fontWeight: 600 }}>{table}</span>
                 <span style={{ 
                   background: status.exists ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', 
@@ -334,6 +369,80 @@ export default function AdminSettingsPage() {
           </div>
         </section>
       </div>
+
+      {/* Notification Health Section */}
+      <section style={{ background: '#0f1729', border: '1px solid #1e3a5f', borderRadius: 16, padding: 24, marginBottom: 24 }}>
+        <h2 style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>🔔 Notification Health</h2>
+        <p style={{ color: '#64748b', fontSize: 13, marginBottom: 20 }}>Verify email routing (Resend) and Meta WhatsApp Cloud API credentials.</p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={{ padding: 16, background: '#0a0f1e', borderRadius: 12, border: '1px solid #1e3a5f' }}>
+              <div style={{ color: '#3b82f6', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>WhatsApp Recipient</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 13, color: '#f1f5f9' }}>Default number: <strong>{whatsappDefaultTo}</strong></span>
+                {whatsappNormalized && (
+                  <span style={{ fontSize: 11, color: '#10b981' }}>Normalized preview: {whatsappNormalized}</span>
+                )}
+              </div>
+            </div>
+
+            <div style={{ padding: 16, background: '#0a0f1e', borderRadius: 12, border: '1px solid #1e3a5f' }} className="flex justify-between items-center w-full">
+              <div>
+                <div style={{ color: '#3b82f6', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>Diagnostics Test</div>
+                <span style={{ fontSize: 13, color: '#94a3b8' }}>Send test messages to verified contacts</span>
+              </div>
+              <button
+                onClick={sendTestNotification}
+                disabled={testLoading}
+                style={{
+                  background: testLoading ? '#1e293b' : '#10b981',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '10px 18px',
+                  color: '#fff',
+                  fontWeight: 600,
+                  cursor: testLoading ? 'not-allowed' : 'pointer',
+                  fontSize: 13
+                }}
+              >
+                {testLoading ? '⏳ Sending...' : '✈️ Send Test Notification'}
+              </button>
+            </div>
+          </div>
+
+          {testError && (
+            <div style={{ padding: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, color: '#ef4444', fontSize: 13 }}>
+              <strong>Error triggering test:</strong> {testError}
+            </div>
+          )}
+
+          {testResult && (
+            <div style={{ padding: 16, background: '#0a0f1e', borderRadius: 12, border: '1px solid #1e3a5f' }}>
+              <h3 style={{ margin: '0 0 12px', fontSize: 14, color: '#f1f5f9', fontWeight: 600 }}>Test Delivery Results:</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div style={{ padding: 12, background: testResult.email?.ok ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${testResult.email?.ok ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`, borderRadius: 10 }}>
+                  <div style={{ fontWeight: 700, color: testResult.email?.ok ? '#10b981' : '#ef4444', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {testResult.email?.ok ? '✅ Email Sent' : '❌ Email Failed'}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
+                    {testResult.email?.ok ? 'Verification notification dispatched.' : `Reason: ${testResult.email?.reason || 'Unknown error'}`}
+                  </div>
+                </div>
+
+                <div style={{ padding: 12, background: testResult.whatsapp?.ok ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${testResult.whatsapp?.ok ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`, borderRadius: 10 }}>
+                  <div style={{ fontWeight: 700, color: testResult.whatsapp?.ok ? '#10b981' : '#ef4444', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {testResult.whatsapp?.ok ? '✅ WhatsApp Sent' : '❌ WhatsApp Failed'}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
+                    {testResult.whatsapp?.ok ? 'WhatsApp API message sent.' : `Reason: ${testResult.whatsapp?.reason || 'Unknown error'}`}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
 
       <section style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 16, padding: 24 }}>
         <h2 style={{ color: '#93c5fd', fontSize: 16, fontWeight: 700, margin: '0 0 12px' }}>🛡️ Security & Read-Only Policy</h2>
