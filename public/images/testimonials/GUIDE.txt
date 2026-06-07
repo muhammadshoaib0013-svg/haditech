@@ -1,0 +1,24 @@
+TESTIMONIALS IMAGES FOLDER
+==========================
+
+Yahan client avatars/photos aati hain.
+
+NAMING CONVENTION:
+  client-[name].jpg
+  Example: client-ahmed.jpg, client-john.jpg
+
+SIZE: 200x200px (square)
+FORMAT: JPG ya PNG
+MAX SIZE: 100KB
+
+DATA.TS ME USE:
+  testimonials: [
+    {
+      name: "Ahmed Khan",
+      avatarUrl: "/images/testimonials/client-ahmed.jpg",
+      ...
+    }
+  ]
+
+AGAR PHOTO NAHI HAI:
+  avatarUrl: "" rakho — component initials show karega automatically.

@@ -1,0 +1,7 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#0f172a"/>
+  <rect x="40" y="40" width="1120" height="550" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="600" y="280" font-family="system-ui, sans-serif" font-size="32" font-weight="600" fill="#94a3b8" text-anchor="middle">Project Screenshot</text>
+  <text x="600" y="330" font-family="system-ui, sans-serif" font-size="18" fill="#475569" text-anchor="middle">Replace this with your actual screenshot</text>
+  <text x="600" y="380" font-family="system-ui, sans-serif" font-size="14" fill="#334155" text-anchor="middle">Recommended size: 1200 × 630px · Format: JPG · Max: 500KB</text>
+</svg>
