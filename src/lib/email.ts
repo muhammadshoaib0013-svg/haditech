@@ -6,11 +6,13 @@ export interface EmailResult {
   adminEmailSent?: boolean;
   autoReplySent?: boolean;
   reason?: string;
-  providerError?: any;
+  providerStatus?: string;
+  providerError?: unknown;
 }
 
 /**
- * Server-only helper to send an inquiry notification to admin and an optional auto-reply to the user.
+ * SERVER-ONLY — Sends contact inquiry notification via Resend.
+ * Never throws. Returns structured result.
  */
 export async function sendEmailNotification(data: {
   name: string;
@@ -20,47 +22,65 @@ export async function sendEmailNotification(data: {
   budget?: string | null;
   message: string;
 }): Promise<EmailResult> {
-  const apiKey = typeof process !== "undefined" ? process.env.RESEND_API_KEY : "";
+  const apiKey = process.env.RESEND_API_KEY || "";
 
-  // Validate API key structure and presence
+  // ── Validate API key ──────────────────────────────────────────────────────
   if (
     !apiKey ||
     apiKey.trim() === "" ||
-    apiKey.includes("your_") ||
-    apiKey.includes("placeholder") ||
+    apiKey.toLowerCase().includes("your_") ||
+    apiKey.toLowerCase().includes("placeholder") ||
     !apiKey.startsWith("re_")
   ) {
     return {
       ok: false,
       channel: "email",
-      reason: "Missing, placeholder, or invalid RESEND_API_KEY.",
+      reason: !apiKey
+        ? "RESEND_API_KEY is not set in environment variables."
+        : !apiKey.startsWith("re_")
+        ? "RESEND_API_KEY appears to be a placeholder (must start with 're_')."
+        : "RESEND_API_KEY is not configured.",
     };
   }
 
-  const resend = new Resend(apiKey);
-
+  // ── Resolve email addresses ───────────────────────────────────────────────
   const toEmail =
-    (typeof process !== "undefined" &&
-      (process.env.CONTACT_EMAIL || process.env.NEXT_PUBLIC_EMAIL)) ||
+    process.env.CONTACT_EMAIL ||
+    process.env.NEXT_PUBLIC_EMAIL ||
     "haditech313@gmail.com";
 
-  // Use RESEND_FROM_EMAIL if set, fallback to a safe onboarding/default Resend address
   const fromEmail =
-    (typeof process !== "undefined" && process.env.RESEND_FROM_EMAIL) ||
-    "Contact Form <onboarding@resend.dev>";
+    process.env.RESEND_FROM_EMAIL ||
+    "HADITECH <onboarding@resend.dev>";
+
+  if (!process.env.RESEND_FROM_EMAIL) {
+    console.warn(
+      "⚠️ RESEND_FROM_EMAIL is not set — using Resend sandbox sender. " +
+      "Emails will only deliver to addresses verified in your Resend account. " +
+      "Set RESEND_FROM_EMAIL to a verified domain sender for production use."
+    );
+  }
 
   const siteUrl =
-    (typeof process !== "undefined" && process.env.NEXT_PUBLIC_SITE_URL) ||
-    "https://haditech.com";
+    process.env.NEXT_PUBLIC_SITE_URL || "https://haditech.com";
+
+  const resend = new Resend(apiKey);
 
   try {
-    // 1. Send admin notification email
+    // 1. Admin notification
     const adminEmailRes = await resend.emails.send({
       from: fromEmail,
       to: toEmail,
       replyTo: data.email,
-      subject: `New Project Inquiry: ${data.service} from ${data.name}`,
-      text: `Name: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone || "Not provided"}\nService: ${data.service}\nBudget: ${data.budget || "Not provided"}\nMessage:\n${data.message}`,
+      subject: `New Inquiry: ${data.service} from ${data.name}`,
+      text: [
+        `Name: ${data.name}`,
+        `Email: ${data.email}`,
+        `Phone: ${data.phone || "Not provided"}`,
+        `Service: ${data.service}`,
+        `Budget: ${data.budget || "Not provided"}`,
+        `Message:\n${data.message}`,
+      ].join("\n"),
     });
 
     if (adminEmailRes.error) {
@@ -72,18 +92,18 @@ export async function sendEmailNotification(data: {
       };
     }
 
-    // 2. Auto-reply to client (wrapped in try/catch to avoid failing the admin notification if only client reply fails)
+    // 2. Client auto-reply (non-fatal if it fails)
     let autoReplySent = false;
     try {
-      const clientEmailRes = await resend.emails.send({
+      const clientRes = await resend.emails.send({
         from: fromEmail,
         to: data.email,
         subject: "Got your message — I'll reply within 24 hours | HADITECH",
         html: `
           <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#1a1a1a;">
             <h2 style="color:#000;">Thank you for reaching out, ${data.name}!</h2>
-            <p>I have received your inquiry regarding <strong>${data.service}</strong> and am currently reviewing your requirements.</p>
-            <p>You can expect a detailed response within the next <strong>24 hours</strong>.</p>
+            <p>I have received your inquiry regarding <strong>${data.service}</strong> and am reviewing your requirements.</p>
+            <p>You can expect a detailed response within <strong>24 hours</strong>.</p>
             <hr style="border:1px solid #eee;margin:20px 0;"/>
             <p>In the meantime:</p>
             <ul>
@@ -95,9 +115,9 @@ export async function sendEmailNotification(data: {
           </div>
         `,
       });
-      autoReplySent = !clientEmailRes.error;
+      autoReplySent = !clientRes.error;
     } catch (clientErr) {
-      console.warn("⚠️ Client auto-reply email failed to send:", clientErr);
+      console.warn("⚠️ Client auto-reply failed:", clientErr);
     }
 
     return {
@@ -110,7 +130,52 @@ export async function sendEmailNotification(data: {
     return {
       ok: false,
       channel: "email",
-      reason: error instanceof Error ? error.message : "Unknown error occurred while sending email.",
+      reason:
+        error instanceof Error
+          ? error.message
+          : "Unknown error sending email via Resend.",
+    };
+  }
+}
+
+/**
+ * SERVER-ONLY — Sends a newsletter admin notification via Resend.
+ * Non-throwing. Returns ok/fail.
+ */
+export async function sendNewsletterAdminNotification(email: string): Promise<EmailResult> {
+  const apiKey = process.env.RESEND_API_KEY || "";
+  if (!apiKey || !apiKey.startsWith("re_")) {
+    return { ok: false, channel: "email", reason: "RESEND_API_KEY not configured." };
+  }
+
+  const toEmail =
+    process.env.CONTACT_EMAIL ||
+    process.env.NEXT_PUBLIC_EMAIL ||
+    "haditech313@gmail.com";
+
+  const fromEmail =
+    process.env.RESEND_FROM_EMAIL || "HADITECH <onboarding@resend.dev>";
+
+  const resend = new Resend(apiKey);
+
+  try {
+    const res = await resend.emails.send({
+      from: fromEmail,
+      to: toEmail,
+      subject: `New Newsletter Subscriber: ${email}`,
+      text: `A new subscriber joined the HADITECH newsletter:\n\nEmail: ${email}\nTime: ${new Date().toISOString()}`,
+    });
+
+    if (res.error) {
+      return { ok: false, channel: "email", reason: res.error.message, providerError: res.error };
+    }
+
+    return { ok: true, channel: "email" };
+  } catch (err) {
+    return {
+      ok: false,
+      channel: "email",
+      reason: err instanceof Error ? err.message : "Unknown error",
     };
   }
 }

@@ -26,24 +26,17 @@ export async function submitContactForm(
     const headersList = headers();
     const ip = headersList.get("x-forwarded-for") || "127.0.0.1";
 
-    // Rate Limiting
+    // ── Rate limiting ────────────────────────────────────────────────────────
     const now = Date.now();
     const timestamps = rateLimitMap.get(ip) || [];
-    const validTimestamps = timestamps.filter(
-      (t) => now - t < RATE_LIMIT_WINDOW_MS
-    );
-
+    const validTimestamps = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
     if (validTimestamps.length >= RATE_LIMIT_MAX) {
-      return {
-        success: false,
-        message: "Too many requests. Please try again in an hour.",
-      };
+      return { success: false, message: "Too many requests. Please try again in an hour." };
     }
-
     validTimestamps.push(now);
     rateLimitMap.set(ip, validTimestamps);
 
-    // Validate Form Fields
+    // ── Validate form fields ─────────────────────────────────────────────────
     const rawData = {
       name: formData.get("name"),
       email: formData.get("email"),
@@ -55,7 +48,6 @@ export async function submitContactForm(
     };
 
     const validatedData = contactSchema.safeParse(rawData);
-
     if (!validatedData.success) {
       return {
         success: false,
@@ -63,20 +55,17 @@ export async function submitContactForm(
         errors: validatedData.error.flatten().fieldErrors,
       };
     }
-
     if (validatedData.data.honeypot) {
-      return {
-        success: false,
-        message: "Invalid submission.",
-      };
+      return { success: false, message: "Invalid submission." };
     }
 
     const { name, email, phone, service, budget, message } = validatedData.data;
 
+    // ── 1. Save lead to Supabase ─────────────────────────────────────────────
     let leadId: string | null = null;
     let leadSaveOk = false;
+    let leadSaveReason = "supabase client not configured";
 
-    // 1. Try to save lead in database (Supabase contact_leads table)
     const supabase = createServerSupabaseClient();
     if (supabase) {
       try {
@@ -97,69 +86,61 @@ export async function submitContactForm(
           .single();
 
         if (insertError) {
-          console.error("❌ lead save fail:", insertError.message);
+          leadSaveReason = `code=${insertError.code}, msg=${insertError.message}`;
+          console.error("❌ contact_leads insert: FAIL,", leadSaveReason);
         } else if (insertData) {
           leadId = insertData.id;
           leadSaveOk = true;
-          console.log("✅ lead save ok, id:", leadId);
+          leadSaveReason = "ok";
+          console.log("✅ contact_leads insert: OK, id=" + leadId);
         }
       } catch (err) {
-        console.error("❌ lead save fail exception:", err);
+        leadSaveReason = err instanceof Error ? err.message : String(err);
+        console.error("❌ contact_leads insert: FAIL (exception),", leadSaveReason);
       }
     } else {
-      console.warn("⚠️ Supabase service client not configured - skipped saving lead");
+      console.warn("⚠️ contact_leads insert: SKIP — Supabase service client not configured");
     }
 
-    // 2. Send Email Notification
-    const emailResult = await sendEmailNotification({
-      name,
-      email,
-      phone,
-      service,
-      budget,
-      message,
-    });
-    console.log(`✉️ email status: ${emailResult.ok ? "ok" : "fail"} (${emailResult.reason || "success"})`);
+    // ── 2. Send email notification ───────────────────────────────────────────
+    const emailResult = await sendEmailNotification({ name, email, phone, service, budget, message });
 
-    // 3. Send WhatsApp Notification
+    // ── 3. Send WhatsApp notification ────────────────────────────────────────
     const whatsappResult = await sendMetaWhatsAppNotification({
-      name,
-      email,
-      phone,
-      service,
-      budget,
-      message,
-      source: "contact_form",
+      name, email, phone, service, budget, message, source: "contact_form",
     });
-    console.log(`💬 whatsapp status: ${whatsappResult.ok ? "ok" : "fail"} (${whatsappResult.reason || "success"})`);
 
-    // 4. Update status in database if lead was saved
+    // ── 4. Update notification statuses in DB ────────────────────────────────
     if (leadSaveOk && leadId && supabase) {
       try {
-        const { error: updateError } = await supabase
+        await supabase
           .from("contact_leads")
           .update({
             email_status: emailResult.ok ? "ok" : "fail",
             whatsapp_status: whatsappResult.ok ? "ok" : "fail",
           })
           .eq("id", leadId);
-
-        if (updateError) {
-          console.error("❌ failed to update lead statuses:", updateError.message);
-        }
       } catch (err) {
-        console.error("❌ exception updating lead statuses:", err);
+        console.error("❌ lead status update failed:", err);
       }
     }
 
-    // 5. Construct honest response to the frontend UI
-    const eitherNotificationSucceeded = emailResult.ok || whatsappResult.ok;
+    // ── 5. Structured pipeline log (no secrets) ──────────────────────────────
+    console.log(
+      [
+        "CONTACT_PIPELINE_RESULT:",
+        `  leadStorage: ${leadSaveOk ? "ok" : "fail"} | ${leadSaveReason}`,
+        `  email:       ${emailResult.ok ? "ok" : "fail"} | ${emailResult.reason || "sent"}`,
+        `  whatsapp:    ${whatsappResult.ok ? "ok" : "fail"} | ${whatsappResult.reason || "sent"} | providerStatus=${whatsappResult.providerStatus ?? "n/a"}`,
+        `  envStatus:   RESEND_API_KEY=${process.env.RESEND_API_KEY ? "set" : "missing"} | META_WHATSAPP_TOKEN=${(process.env.META_WHATSAPP_TOKEN || process.env.META_WHATSAPP_ACCESS_TOKEN) ? "set" : "missing"} | META_WHATSAPP_PHONE_ID=${(process.env.META_WHATSAPP_PHONE_ID || process.env.META_WHATSAPP_PHONE_NUMBER_ID) ? "set" : "missing"} | WHATSAPP_NOTIFY_TO=${(process.env.WHATSAPP_NOTIFY_TO || process.env.WHATSAPP_DEFAULT_TO) ? "set" : "missing"}`,
+      ].join("\n")
+    );
 
-    if (eitherNotificationSucceeded) {
-      return {
-        success: true,
-        message: "Message received. Notification sent successfully.",
-      };
+    // ── 6. Honest response ───────────────────────────────────────────────────
+    const notified = emailResult.ok || whatsappResult.ok;
+
+    if (notified) {
+      return { success: true, message: "Message received. Notification sent successfully." };
     } else if (leadSaveOk) {
       return {
         success: true,
@@ -169,14 +150,12 @@ export async function submitContactForm(
     } else {
       return {
         success: false,
-        message: "Message could not be delivered. Please contact us directly on WhatsApp or email.",
+        message:
+          "Message could not be delivered. Please contact us directly on WhatsApp or email.",
       };
     }
   } catch (error) {
-    console.error("Contact form error:", error);
-    return {
-      success: false,
-      message: "An unexpected error occurred. Please try again.",
-    };
+    console.error("Contact form unhandled error:", error);
+    return { success: false, message: "An unexpected error occurred. Please try again." };
   }
 }

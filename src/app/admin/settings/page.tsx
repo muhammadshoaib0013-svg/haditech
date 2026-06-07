@@ -25,7 +25,9 @@ export default function AdminSettingsPage() {
     { label: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', ok: false, note: 'Checking...' },
     { label: 'SUPABASE_SERVICE_ROLE_KEY', ok: false, note: 'Checking...' },
     { label: 'RESEND_API_KEY', ok: false, note: 'Checking...' },
-    { label: 'META_WHATSAPP_ACCESS_TOKEN', ok: false, note: 'Checking...' },
+    { label: 'META_WHATSAPP_TOKEN', ok: false, note: 'Checking...' },
+    { label: 'META_WHATSAPP_PHONE_ID', ok: false, note: 'Checking...' },
+    { label: 'WHATSAPP_NOTIFY_TO', ok: false, note: 'Checking...' },
   ])
   const [healthData, setHealthData] = useState<HealthResponse | null>(null)
   const [healthLoading, setHealthLoading] = useState(true)
@@ -49,14 +51,16 @@ export default function AdminSettingsPage() {
         if (checkJson.success && checkJson.config) {
           const cfg = checkJson.config
           setEnvChecks([
-            { label: 'ADMIN_PASSWORD', ok: cfg.ADMIN_PASSWORD, note: cfg.ADMIN_PASSWORD ? 'Set server-side only — never exposed to browser ✅' : '❌ Not set — add to .env.local' },
-            { label: 'NEXT_PUBLIC_SUPABASE_URL', ok: cfg.NEXT_PUBLIC_SUPABASE_URL, note: cfg.NEXT_PUBLIC_SUPABASE_URL ? '✅ Set' : '❌ Not set — add to .env.local' },
-            { label: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', ok: cfg.NEXT_PUBLIC_SUPABASE_ANON_KEY, note: cfg.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ Set' : '❌ Not set — add to .env.local' },
-            { label: 'SUPABASE_SERVICE_ROLE_KEY', ok: cfg.SUPABASE_SERVICE_ROLE_KEY, note: cfg.SUPABASE_SERVICE_ROLE_KEY ? 'Server-only — verified via API routes ✅' : '❌ Not set — add to .env.local' },
-            { label: 'RESEND_API_KEY', ok: cfg.RESEND_API_KEY, note: cfg.RESEND_API_KEY ? '✅ Configured for Email notifications' : '❌ Not set — email notifications will be skipped' },
-            { label: 'META_WHATSAPP_ACCESS_TOKEN', ok: cfg.META_WHATSAPP_ACCESS_TOKEN, note: cfg.META_WHATSAPP_ACCESS_TOKEN ? '✅ Configured for Meta WhatsApp Cloud API' : '❌ Not set — WhatsApp notifications will be skipped' },
+            { label: 'ADMIN_PASSWORD', ok: cfg.ADMIN_PASSWORD, note: cfg.ADMIN_PASSWORD ? 'Set server-side only ✅' : '❌ Not set — add to .env.local' },
+            { label: 'NEXT_PUBLIC_SUPABASE_URL', ok: cfg.NEXT_PUBLIC_SUPABASE_URL, note: cfg.NEXT_PUBLIC_SUPABASE_URL ? '✅ Set' : '❌ Not set' },
+            { label: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', ok: cfg.NEXT_PUBLIC_SUPABASE_ANON_KEY, note: cfg.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ Set' : '❌ Not set' },
+            { label: 'SUPABASE_SERVICE_ROLE_KEY', ok: cfg.SUPABASE_SERVICE_ROLE_KEY, note: cfg.SUPABASE_SERVICE_ROLE_KEY ? 'Server-only — verified ✅' : '❌ Not set' },
+            { label: 'RESEND_API_KEY', ok: cfg.RESEND_API_KEY, note: cfg.RESEND_API_KEY ? '✅ Email notifications active' : '❌ Not set — emails will fail' },
+            { label: 'META_WHATSAPP_TOKEN', ok: cfg.META_WHATSAPP_ACCESS_TOKEN, note: cfg.META_WHATSAPP_ACCESS_TOKEN ? '✅ WhatsApp token set' : '❌ Missing — WhatsApp will fail' },
+            { label: 'META_WHATSAPP_PHONE_ID', ok: cfg.META_WHATSAPP_PHONE_ID, note: cfg.META_WHATSAPP_PHONE_ID ? '✅ Phone number ID set' : '❌ Missing — WhatsApp will fail' },
+            { label: 'WHATSAPP_NOTIFY_TO', ok: cfg.WHATSAPP_DEFAULT_TO !== 'missing', note: cfg.WHATSAPP_DEFAULT_TO !== 'missing' ? `✅ Recipient set (normalized: ${cfg.WHATSAPP_DEFAULT_TO_NORMALIZED || '?'})` : '❌ Missing — WhatsApp recipient unknown' },
           ])
-          setWhatsappDefaultTo(cfg.WAPP_DEFAULT_TO || cfg.WHATSAPP_DEFAULT_TO || 'missing')
+          setWhatsappDefaultTo(cfg.WHATSAPP_DEFAULT_TO || 'missing')
           setWhatsappNormalized(cfg.WHATSAPP_DEFAULT_TO_NORMALIZED || '')
         }
       }
@@ -156,6 +160,7 @@ export default function AdminSettingsPage() {
     { label: 'Page Content Table (page_content)', ok: healthData?.tables?.page_content?.exists || false },
     { label: 'SEO Settings Table (seo_settings)', ok: healthData?.tables?.seo_settings?.exists || false },
     { label: 'Contact Leads Table (contact_leads)', ok: healthData?.tables?.contact_leads?.exists || false },
+    { label: 'Newsletter Subscribers Table (newsletter_subscribers)', ok: healthData?.tables?.newsletter_subscribers?.exists || false },
   ]
 
   const totalTables = 11
@@ -420,25 +425,53 @@ export default function AdminSettingsPage() {
           {testResult && (
             <div style={{ padding: 16, background: '#0a0f1e', borderRadius: 12, border: '1px solid #1e3a5f' }}>
               <h3 style={{ margin: '0 0 12px', fontSize: 14, color: '#f1f5f9', fontWeight: 600 }}>Test Delivery Results:</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div style={{ padding: 12, background: testResult.email?.ok ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${testResult.email?.ok ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`, borderRadius: 10 }}>
-                  <div style={{ fontWeight: 700, color: testResult.email?.ok ? '#10b981' : '#ef4444', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {testResult.email?.ok ? '✅ Email Sent' : '❌ Email Failed'}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                {/* Lead Storage */}
+                <div style={{ padding: 12, background: testResult.leadStorage?.ok ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${testResult.leadStorage?.ok ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`, borderRadius: 10 }}>
+                  <div style={{ fontWeight: 700, color: testResult.leadStorage?.ok ? '#10b981' : '#ef4444', fontSize: 13 }}>
+                    {testResult.leadStorage?.ok ? '✅ contact_leads: OK' : '❌ contact_leads: FAIL'}
                   </div>
-                  <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
-                    {testResult.email?.ok ? 'Verification notification dispatched.' : `Reason: ${testResult.email?.reason || 'Unknown error'}`}
+                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>{testResult.leadStorage?.reason || ''}</div>
+                </div>
+                {/* Newsletter Storage */}
+                <div style={{ padding: 12, background: testResult.newsletterStorage?.ok ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${testResult.newsletterStorage?.ok ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`, borderRadius: 10 }}>
+                  <div style={{ fontWeight: 700, color: testResult.newsletterStorage?.ok ? '#10b981' : '#ef4444', fontSize: 13 }}>
+                    {testResult.newsletterStorage?.ok ? '✅ newsletter_subscribers: OK' : '❌ newsletter_subscribers: FAIL'}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>{testResult.newsletterStorage?.reason || ''}</div>
+                </div>
+                {/* Email */}
+                <div style={{ padding: 12, background: testResult.email?.ok ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${testResult.email?.ok ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`, borderRadius: 10 }}>
+                  <div style={{ fontWeight: 700, color: testResult.email?.ok ? '#10b981' : '#ef4444', fontSize: 13 }}>
+                    {testResult.email?.ok ? '✅ Email: Sent' : '❌ Email: Failed'}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+                    {testResult.email?.ok ? 'Admin notification dispatched.' : `Reason: ${testResult.email?.reason || 'Unknown'}`}
                   </div>
                 </div>
-
+                {/* WhatsApp */}
                 <div style={{ padding: 12, background: testResult.whatsapp?.ok ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${testResult.whatsapp?.ok ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`, borderRadius: 10 }}>
-                  <div style={{ fontWeight: 700, color: testResult.whatsapp?.ok ? '#10b981' : '#ef4444', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {testResult.whatsapp?.ok ? '✅ WhatsApp Sent' : '❌ WhatsApp Failed'}
+                  <div style={{ fontWeight: 700, color: testResult.whatsapp?.ok ? '#10b981' : '#ef4444', fontSize: 13 }}>
+                    {testResult.whatsapp?.ok ? '✅ WhatsApp: Sent' : '❌ WhatsApp: Failed'}
                   </div>
-                  <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
-                    {testResult.whatsapp?.ok ? 'WhatsApp API message sent.' : `Reason: ${testResult.whatsapp?.reason || 'Unknown error'}`}
+                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+                    {testResult.whatsapp?.ok ? 'Meta API message sent.' : `Reason: ${testResult.whatsapp?.reason || 'Unknown'}${testResult.whatsapp?.providerStatus ? ` | HTTP ${testResult.whatsapp.providerStatus}` : ''}`}
                   </div>
                 </div>
               </div>
+              {/* Env summary */}
+              {testResult.env && (
+                <div style={{ marginTop: 8, padding: 12, background: '#030712', borderRadius: 8, border: '1px solid #1e3a5f' }}>
+                  <div style={{ color: '#64748b', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>Env Keys (set/missing only)</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 4 }}>
+                    {Object.entries(testResult.env).map(([k, v]) => (
+                      <div key={k} style={{ fontFamily: 'monospace', fontSize: 11, color: v === 'set' ? '#10b981' : v === 'placeholder' ? '#f59e0b' : '#ef4444' }}>
+                        {v === 'set' ? '✅' : v === 'placeholder' ? '⚠️' : '❌'} {k}: {String(v)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
