@@ -101,13 +101,13 @@ export const Hero = ({
           className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in"
         >
           <Link href="/portfolio">
-            <button className="flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground font-bold rounded-full hover:scale-105 transition-transform shadow-lg shadow-primary/20">
-              See my work <ArrowRight size={20} />
+            <button className="flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground font-extrabold text-xs uppercase tracking-wider rounded-lg hover:bg-primary/95 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm">
+              See my work <ArrowRight size={16} />
             </button>
           </Link>
           <a href={process.env.NEXT_PUBLIC_WHATSAPP_LINK || whatsappLink} target="_blank" rel="noopener noreferrer">
-            <button className="flex items-center gap-2 px-8 py-4 bg-muted text-foreground font-bold rounded-full hover:bg-muted/80 transition-colors">
-              Book free call <MessageSquare size={20} />
+            <button className="flex items-center gap-2 px-8 py-4 bg-card hover:bg-muted/30 border border-border text-foreground font-extrabold text-xs uppercase tracking-wider rounded-lg transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm">
+              Book free call <MessageSquare size={16} />
             </button>
           </a>
         </motion.div>

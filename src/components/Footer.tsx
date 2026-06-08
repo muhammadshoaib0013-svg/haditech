@@ -56,7 +56,7 @@ function NewsletterForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3" aria-label="Newsletter subscription form">
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-stretch">
         <input
           type="email"
           value={email}
@@ -64,13 +64,13 @@ function NewsletterForm() {
           placeholder="Email address"
           required
           disabled={status === "loading" || status === "success"}
-          className="bg-background border border-border rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-primary/50 disabled:opacity-60 transition-colors"
+          className="bg-background dark:bg-slate-900 border border-border rounded-lg px-4 py-2.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-60 transition-all shadow-sm text-foreground"
           aria-label="Email address for newsletter"
         />
         <button
           type="submit"
           disabled={status === "loading" || status === "success" || !email.trim()}
-          className="bg-foreground text-background px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary hover:text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1.5 whitespace-nowrap"
+          className="bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-primary/95 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 whitespace-nowrap shadow-sm shadow-primary/10"
           aria-label="Subscribe to newsletter"
         >
           {status === "loading" ? (
@@ -117,105 +117,107 @@ export default function Footer({
   sections,
 }: FooterProps) {
   return (
-    <footer className="mt-24 border-t border-border bg-card/30 backdrop-blur-sm pt-16 pb-8">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-        {/* Brand */}
-        <div className="md:col-span-1 space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-bold text-sm">
-              {brandName.charAt(0)}
+    <footer className="mt-24 border-t border-border bg-secondary/35 dark:bg-[#0B1120]/30 backdrop-blur-sm pt-16 pb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+          {/* Brand */}
+          <div className="md:col-span-1 space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                {brandName.charAt(0)}
+              </div>
+              <span className="text-lg font-bold tracking-tight text-foreground">{brandName}</span>
             </div>
-            <span className="text-lg font-bold tracking-tight">{brandName}</span>
-          </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">{tagline}</p>
-          <div className="flex items-center gap-4 pt-2">
-            {twitterUrl && twitterUrl !== "#" && (
-              <a
-                href={twitterUrl}
-                className="text-muted-foreground hover:text-primary transition-colors"
-                aria-label="Twitter"
-              >
-                <Twitter size={18} />
-              </a>
-            )}
-            {githubUrl && githubUrl !== "#" && (
-              <a
-                href={githubUrl}
-                className="text-muted-foreground hover:text-primary transition-colors"
-                aria-label="GitHub"
-              >
-                <Github size={18} />
-              </a>
-            )}
-            {linkedinUrl && linkedinUrl !== "#" && (
-              <a
-                href={linkedinUrl}
-                className="text-muted-foreground hover:text-primary transition-colors"
-                aria-label="LinkedIn"
-              >
-                <Linkedin size={18} />
-              </a>
-            )}
-          </div>
-        </div>
-
-        {/* Nav sections */}
-        {sections && sections.length > 0 ? (
-          sections.map((section) => (
-            <div key={section.id}>
-              <h4 className="font-semibold mb-4">{section.title}</h4>
-              {section.content && (
-                <p className="text-xs text-muted-foreground mb-3">{section.content}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">{tagline}</p>
+            <div className="flex items-center gap-4 pt-2">
+              {twitterUrl && twitterUrl !== "#" && (
+                <a
+                  href={twitterUrl}
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  aria-label="Twitter"
+                >
+                  <Twitter size={18} />
+                </a>
               )}
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                {section.links.map((link, idx) => (
-                  <li key={idx}>
-                    <Link href={link.href} className="hover:text-foreground transition-colors">
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              {githubUrl && githubUrl !== "#" && (
+                <a
+                  href={githubUrl}
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  aria-label="GitHub"
+                >
+                  <Github size={18} />
+                </a>
+              )}
+              {linkedinUrl && linkedinUrl !== "#" && (
+                <a
+                  href={linkedinUrl}
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  aria-label="LinkedIn"
+                >
+                  <Linkedin size={18} />
+                </a>
+              )}
             </div>
-          ))
-        ) : (
-          <>
-            <div>
-              <h4 className="font-semibold mb-4">Services</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/services" className="hover:text-foreground transition-colors">SaaS Development</Link></li>
-                <li><Link href="/services" className="hover:text-foreground transition-colors">Custom Web Apps</Link></li>
-                <li><Link href="/services" className="hover:text-foreground transition-colors">AI Integrations</Link></li>
-                <li><Link href="/services" className="hover:text-foreground transition-colors">Frontend Revamps</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/projects" className="hover:text-foreground transition-colors">Portfolio</Link></li>
-                <li><Link href="/case-studies" className="hover:text-foreground transition-colors">Case Studies</Link></li>
-                <li><Link href="/about" className="hover:text-foreground transition-colors">About Us</Link></li>
-                <li><Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link></li>
-              </ul>
-            </div>
-          </>
-        )}
+          </div>
 
-        {/* Newsletter */}
-        <div>
-          <h4 className="font-semibold mb-4">Stay Updated</h4>
-          <p className="text-sm text-muted-foreground mb-4">
-            Subscribe to our newsletter for tech insights.
-          </p>
-          <NewsletterForm />
+          {/* Nav sections */}
+          {sections && sections.length > 0 ? (
+            sections.map((section) => (
+              <div key={section.id}>
+                <h4 className="font-bold text-xs uppercase tracking-wider text-foreground mb-4">{section.title}</h4>
+                {section.content && (
+                  <p className="text-xs text-muted-foreground mb-3">{section.content}</p>
+                )}
+                <ul className="space-y-2.5 text-sm text-muted-foreground">
+                  {section.links.map((link, idx) => (
+                    <li key={idx}>
+                      <Link href={link.href} className="hover:text-primary transition-colors">
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          ) : (
+            <>
+              <div>
+                <h4 className="font-bold text-xs uppercase tracking-wider text-foreground mb-4">Services</h4>
+                <ul className="space-y-2.5 text-sm text-muted-foreground">
+                  <li><Link href="/services" className="hover:text-primary transition-colors">SaaS Development</Link></li>
+                  <li><Link href="/services" className="hover:text-primary transition-colors">Custom Web Apps</Link></li>
+                  <li><Link href="/services" className="hover:text-primary transition-colors">AI Integrations</Link></li>
+                  <li><Link href="/services" className="hover:text-primary transition-colors">Frontend Revamps</Link></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-bold text-xs uppercase tracking-wider text-foreground mb-4">Company</h4>
+                <ul className="space-y-2.5 text-sm text-muted-foreground">
+                  <li><Link href="/projects" className="hover:text-primary transition-colors">Portfolio</Link></li>
+                  <li><Link href="/case-studies" className="hover:text-primary transition-colors">Case Studies</Link></li>
+                  <li><Link href="/about" className="hover:text-primary transition-colors">About Us</Link></li>
+                  <li><Link href="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
+                </ul>
+              </div>
+            </>
+          )}
+
+          {/* Newsletter */}
+          <div>
+            <h4 className="font-bold text-xs uppercase tracking-wider text-foreground mb-4">Stay Updated</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              Subscribe to our newsletter for tech insights.
+            </p>
+            <NewsletterForm />
+          </div>
         </div>
-      </div>
 
-      <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-        <p>© {new Date().getFullYear()} HADITECH. All rights reserved.</p>
-        <div className="flex gap-4">
-          <Link href="#" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-          <Link href="#" className="hover:text-foreground transition-colors">Terms of Service</Link>
+        <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
+          <p>© {new Date().getFullYear()} HADITECH. All rights reserved.</p>
+          <div className="flex gap-4">
+            <Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link>
+            <Link href="#" className="hover:text-primary transition-colors">Terms of Service</Link>
+          </div>
         </div>
       </div>
     </footer>

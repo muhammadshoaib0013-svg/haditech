@@ -58,21 +58,21 @@ export default async function AboutPage() {
       <section className="grid md:grid-cols-2 gap-8">
         <FadeInSection delay={0.1}>
           <GlowCard className="p-8 h-full">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-6">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-6 border border-primary/20">
               <Rocket size={24} />
             </div>
-            <h2 className="text-2xl font-bold mb-4">{storyTitle}</h2>
-            <p className="text-muted-foreground leading-relaxed">{storyBody}</p>
+            <h2 className="text-2xl font-bold mb-4 font-heading">{storyTitle}</h2>
+            <p className="text-muted-foreground leading-relaxed text-justify max-w-[72ch]">{storyBody}</p>
           </GlowCard>
         </FadeInSection>
 
         <FadeInSection delay={0.2}>
           <GlowCard className="p-8 h-full">
-            <div className="w-12 h-12 rounded-xl bg-violet-500/10 text-violet-400 flex items-center justify-center mb-6">
+            <div className="w-12 h-12 rounded-xl bg-violet-500/10 text-violet-400 flex items-center justify-center mb-6 border border-violet-500/20">
               <Target size={24} />
             </div>
-            <h2 className="text-2xl font-bold mb-4">{missionTitle}</h2>
-            <p className="text-muted-foreground leading-relaxed">{missionBody}</p>
+            <h2 className="text-2xl font-bold mb-4 font-heading">{missionTitle}</h2>
+            <p className="text-muted-foreground leading-relaxed text-justify max-w-[72ch]">{missionBody}</p>
           </GlowCard>
         </FadeInSection>
       </section>
@@ -90,11 +90,11 @@ export default async function AboutPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
             {values.map((v, i) => (
               <GlowCard key={i} className="p-6 text-center">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 border border-primary/20">
                   <v.icon size={22} />
                 </div>
-                <h3 className="font-bold text-lg mb-2">{v.title}</h3>
-                <p className="text-muted-foreground text-sm">{v.desc}</p>
+                <h3 className="font-bold text-lg mb-2 font-heading">{v.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{v.desc}</p>
               </GlowCard>
             ))}
           </div>
@@ -113,20 +113,20 @@ export default async function AboutPage() {
         <FadeInSection delay={0.1}>
           <div className="mt-10 flex justify-center">
             <GlowCard className="p-8 max-w-md text-center">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center mx-auto mb-4 text-3xl">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center mx-auto mb-4 text-3xl shadow-sm border border-primary/20">
                 👨‍💻
               </div>
-              <h3 className="text-xl font-bold mb-1">{siteConfig.author.name}</h3>
-              <p className="text-primary text-sm font-medium mb-3">{siteConfig.author.jobTitle}</p>
-              <p className="text-muted-foreground text-sm">
+              <h3 className="text-xl font-bold mb-1 font-heading">{siteConfig.author.name}</h3>
+              <p className="text-primary text-sm font-semibold mb-3">{siteConfig.author.jobTitle}</p>
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 Building premium SaaS platforms, AI automation agents, and high-performance web applications for global clients.
               </p>
               <div className="flex justify-center gap-4 mt-6">
                 {siteConfig.socials.linkedin !== '#' && (
-                  <a href={siteConfig.socials.linkedin} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary transition-colors text-sm">LinkedIn</a>
+                  <a href={siteConfig.socials.linkedin} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary transition-colors text-xs font-bold uppercase tracking-wider">LinkedIn</a>
                 )}
                 {siteConfig.socials.github !== '#' && (
-                  <a href={siteConfig.socials.github} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary transition-colors text-sm">GitHub</a>
+                  <a href={siteConfig.socials.github} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary transition-colors text-xs font-bold uppercase tracking-wider">GitHub</a>
                 )}
               </div>
             </GlowCard>

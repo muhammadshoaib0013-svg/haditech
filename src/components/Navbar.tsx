@@ -45,28 +45,30 @@ export default function Navbar({ navItems, brandName = "HADITECH" }: NavbarProps
   return (
     <header
       className={cn(
-        "fixed top-0 w-full z-50 transition-all duration-300 border-b border-transparent",
+        "fixed top-0 w-full z-50 transition-all duration-300 border-b",
         isScrolled
           ? "bg-background/80 backdrop-blur-md border-border shadow-sm"
-          : "bg-transparent"
+          : "bg-transparent border-transparent"
       )}
     >
-      <div className="container mx-auto px-4 md:px-6 h-20 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 z-50">
-          <Layers className="h-8 w-8 text-primary" />
-          <span className="font-bold text-2xl tracking-tighter">{brandName}</span>
+      <div className="container mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2.5 z-50">
+          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
+            <Layers className="h-5 w-5 text-primary" />
+          </div>
+          <span className="font-extrabold text-xl tracking-tight font-heading">{brandName}</span>
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-6">
           <ul className="flex items-center gap-6">
             {links.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   className={cn(
-                    "text-sm font-medium transition-colors hover:text-primary",
-                    pathname === link.href ? "text-primary" : "text-muted-foreground"
+                    "text-xs font-semibold uppercase tracking-wider transition-colors hover:text-primary",
+                    pathname === link.href ? "text-primary" : "text-muted-foreground/80"
                   )}
                 >
                   {link.name}
@@ -75,23 +77,23 @@ export default function Navbar({ navItems, brandName = "HADITECH" }: NavbarProps
             ))}
           </ul>
           
-          <div className="flex items-center gap-4 border-l pl-4 border-border">
+          <div className="flex items-center gap-4 border-l pl-4 border-border/80">
             {mounted && (
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="p-2 rounded-full hover:bg-muted transition-colors"
+                className="p-1.5 rounded-lg hover:bg-muted/50 border border-transparent hover:border-border/30 text-muted-foreground hover:text-foreground transition-all"
                 aria-label="Toggle theme"
               >
                 {theme === "dark" ? (
-                  <Sun className="h-5 w-5" />
+                  <Sun className="h-4.5 w-4.5" />
                 ) : (
-                  <Moon className="h-5 w-5" />
+                  <Moon className="h-4.5 w-4.5" />
                 )}
               </button>
             )}
             <Link
               href="/contact"
-              className="bg-primary text-primary-foreground px-4 py-2 rounded-full text-sm font-medium hover:bg-primary/90 transition-colors"
+              className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider shadow-sm hover:bg-primary/95 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               Start Project
             </Link>
@@ -99,27 +101,27 @@ export default function Navbar({ navItems, brandName = "HADITECH" }: NavbarProps
         </nav>
 
         {/* Mobile Toggle */}
-        <div className="flex items-center gap-4 md:hidden z-50">
+        <div className="flex items-center gap-2 md:hidden z-50">
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="p-2 rounded-full hover:bg-muted transition-colors"
+              className="p-1.5 rounded-lg hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-all"
             >
               {theme === "dark" ? (
-                <Sun className="h-5 w-5" />
+                <Sun className="h-4.5 w-4.5" />
               ) : (
-                <Moon className="h-5 w-5" />
+                <Moon className="h-4.5 w-4.5" />
               )}
             </button>
           )}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 -mr-2"
+            className="p-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             {isMobileMenuOpen ? (
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5" />
             ) : (
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5" />
             )}
           </button>
         </div>
@@ -129,10 +131,10 @@ export default function Navbar({ navItems, brandName = "HADITECH" }: NavbarProps
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="absolute top-20 left-0 w-full bg-background border-b border-border shadow-lg py-4 px-4 md:hidden flex flex-col gap-4"
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute top-16 left-0 w-full bg-background border-b border-border shadow-md py-6 px-4 md:hidden flex flex-col gap-4"
           >
             <ul className="flex flex-col gap-4">
               {links.map((link) => (
@@ -141,7 +143,7 @@ export default function Navbar({ navItems, brandName = "HADITECH" }: NavbarProps
                     href={link.href}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={cn(
-                      "block text-lg font-medium transition-colors",
+                      "block text-base font-semibold uppercase tracking-wider transition-colors",
                       pathname === link.href ? "text-primary" : "text-muted-foreground"
                     )}
                   >
@@ -153,9 +155,9 @@ export default function Navbar({ navItems, brandName = "HADITECH" }: NavbarProps
             <Link
               href="/contact"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="bg-primary text-primary-foreground px-4 py-3 rounded-md text-center font-medium mt-4"
+              className="bg-primary text-primary-foreground px-4 py-3 rounded-lg text-center font-bold uppercase tracking-wider text-xs shadow-sm mt-2"
             >
-              Start a Project
+              Start Project
             </Link>
           </motion.div>
         )}

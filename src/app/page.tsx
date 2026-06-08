@@ -68,13 +68,13 @@ export default async function Home() {
       <section className="-mt-16">
         <FadeInSection>
           <div className="text-center space-y-4">
-            <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">Backed by Clients & Startup Teams Globally</span>
-            <div className="w-full overflow-hidden relative py-6 border-y border-border/50 bg-card/10 backdrop-blur-sm">
-              <div className="flex justify-around flex-wrap gap-8 items-center max-w-5xl mx-auto px-4">
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground/80 font-bold">Backed by Clients & Startup Teams Globally</span>
+            <div className="w-full overflow-hidden relative py-5 border-y border-border bg-card/50">
+              <div className="flex justify-around flex-wrap gap-x-12 gap-y-6 items-center max-w-5xl mx-auto px-4">
                 {BRANDS.map((brand, i) => (
                   <span 
                     key={i} 
-                    className="text-muted-foreground/60 hover:text-primary transition-colors font-bold text-lg tracking-tight select-none cursor-default flex items-center gap-2"
+                    className="text-muted-foreground/50 hover:text-primary transition-colors font-extrabold text-sm uppercase tracking-wider select-none cursor-default flex items-center gap-2"
                   >
                     {brand.logo}
                   </span>
@@ -95,20 +95,19 @@ export default async function Home() {
               const linkUrl = serviceUrls[s.title] || "/services";
               return (
                 <Link key={i} href={linkUrl} className="group block h-full">
-                  <GlowCard className="flex flex-col h-full gap-4 items-start border-primary/10 hover:border-primary/40 transition-all duration-300 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors" />
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                      <Icon size={24} />
+                  <GlowCard className="flex flex-col h-full gap-5 items-start border-border hover:border-primary/30 transition-all duration-300 relative overflow-hidden group">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
+                      <Icon size={22} />
                     </div>
-                    <div className="space-y-1">
-                      <h3 className="text-xl font-bold group-hover:text-primary transition-colors">{s.title}</h3>
-                      <p className="text-xs font-semibold text-muted-foreground/80">{s.pricingHint} &bull; {s.deliveryTime}</p>
+                    <div className="space-y-1.5">
+                      <h3 className="text-lg font-bold group-hover:text-primary transition-colors font-heading">{s.title}</h3>
+                      <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground/80">{s.pricingHint} &bull; {s.deliveryTime}</p>
                     </div>
                     <p className="text-muted-foreground text-sm flex-1 leading-relaxed">{s.shortDescription}</p>
                     <div className="flex items-center gap-1.5 text-xs text-primary font-bold pt-2 group-hover:translate-x-1 transition-transform mt-auto">
                       Learn more <ArrowRight size={14} />
                     </div>
-                    {s.popular && <Badge variant="success" className="absolute top-4 right-4">Popular</Badge>}
+                    {s.popular && <Badge variant="default" className="absolute top-4 right-4 uppercase tracking-widest text-[9px] font-bold">Popular</Badge>}
                   </GlowCard>
                 </Link>
               );
@@ -201,7 +200,7 @@ export default async function Home() {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <Badge variant="outline" className="border-primary/20 text-primary">{study.industry}</Badge>
-                    <span className="text-success font-bold text-sm">{study.result}</span>
+                    <span className="badge-category">{study.result}</span>
                   </div>
                   <h3 className="text-2xl font-extrabold">{study.title}</h3>
                   <div className="space-y-4 pt-2">
@@ -210,7 +209,7 @@ export default async function Home() {
                       <p className="text-sm text-muted-foreground leading-relaxed">{study.problem}</p>
                     </div>
                     <div className="space-y-1">
-                      <h4 className="text-xs uppercase font-bold text-success">The Solution</h4>
+                      <h4 className="text-xs uppercase font-bold text-primary">The Solution</h4>
                       <p className="text-sm text-muted-foreground leading-relaxed">{study.solution}</p>
                     </div>
                   </div>
@@ -271,22 +270,22 @@ export default async function Home() {
       {/* CTA BANNER */}
       <section className="border-t border-border/50 pt-16">
         <FadeInSection>
-          <div className="relative p-12 md:p-20 rounded-[2.5rem] bg-card border border-border overflow-hidden text-center isolate">
-            <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent -z-10" />
-            <div className="absolute -top-40 -left-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative p-12 md:p-20 rounded-3xl bg-card border border-border overflow-hidden text-center isolate">
+            <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent -z-10" />
+            <div className="absolute -top-40 -left-40 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
             <div className="max-w-2xl mx-auto space-y-8">
-              <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight">Ready to build something premium?</h2>
-              <p className="text-xl text-muted-foreground leading-relaxed">
+              <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight font-heading">Ready to build something premium?</h2>
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
                 Book a consultation or submit your project parameters. Let's discuss how we can build your productized web application or automate business pipelines.
               </p>
               <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
                 <Link href="/contact" className="w-full sm:w-auto">
-                  <button className="px-8 py-4 w-full sm:w-auto bg-foreground text-background font-bold rounded-full hover:bg-primary transition-colors hover:text-primary-foreground">
+                  <button className="px-8 py-4 w-full sm:w-auto bg-primary text-primary-foreground font-extrabold text-xs uppercase tracking-wider rounded-lg hover:bg-primary/95 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm">
                     Start My Project &rarr;
                   </button>
                 </Link>
                 <a href={process.env.NEXT_PUBLIC_WHATSAPP_LINK || siteConfig.whatsappLink} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
-                  <button className="px-8 py-4 w-full sm:w-auto bg-muted text-foreground font-bold rounded-full hover:bg-muted/80 transition-colors">
+                  <button className="px-8 py-4 w-full sm:w-auto bg-card hover:bg-muted/30 border border-border text-foreground font-extrabold text-xs uppercase tracking-wider rounded-lg transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm">
                     Inquire on WhatsApp
                   </button>
                 </a>

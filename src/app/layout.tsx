@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { siteConfig } from "@/lib/data";
@@ -8,6 +8,7 @@ import { AppLayoutWrapper } from "./AppLayoutWrapper";
 import { getSiteSettings, getNavigationItems, getFooterSections } from "@/lib/cms/public-content";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const plusJakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-plus-jakarta" });
 
 const BASE_URL = siteConfig.siteUrl;
 
@@ -176,7 +177,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased min-h-screen text-foreground bg-background`}>
+      <body className={`${inter.variable} ${plusJakarta.variable} font-sans antialiased min-h-screen text-foreground bg-background`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}

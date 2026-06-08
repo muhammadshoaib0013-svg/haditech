@@ -49,9 +49,9 @@ export default function CaseStudiesPage() {
                 <div className="col-span-1 space-y-4">
                   <Badge variant="outline">{study.industry}</Badge>
                   <h3 className="text-2xl font-bold">{study.title}</h3>
-                  <div className="flex flex-wrap gap-2 pt-2">
+                  <div className="flex flex-wrap gap-1.5 pt-2">
                      {study.stack.map(tech => (
-                       <Badge key={tech} variant="default" className="text-[10px]">{tech}</Badge>
+                       <span key={tech} className="tech-chip">{tech}</span>
                      ))}
                   </div>
                 </div>
@@ -62,7 +62,7 @@ export default function CaseStudiesPage() {
                     <p className="text-sm text-muted-foreground leading-relaxed">{study.problem}</p>
                   </div>
                   <div className="space-y-3">
-                    <h4 className="font-semibold text-success">The Solution</h4>
+                    <h4 className="font-semibold text-primary">The Solution</h4>
                     <p className="text-sm text-muted-foreground leading-relaxed">{study.solution}</p>
                   </div>
                 </div>
@@ -70,9 +70,9 @@ export default function CaseStudiesPage() {
               
               <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                   <div className="px-4 py-2 bg-success/10 text-success rounded-lg font-bold border border-success/20">
+                   <span className="badge-category">
                      {study.result}
-                   </div>
+                   </span>
                    <span className="text-sm font-medium text-muted-foreground">Key Outcome</span>
                 </div>
                 <Link href={`/case-studies/${study.slug}`} className="text-sm font-medium hover:text-primary transition-colors underline underline-offset-4">

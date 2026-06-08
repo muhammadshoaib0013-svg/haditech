@@ -29,7 +29,17 @@ export const ProjectThumbnail = ({ title, imageSrc, videoSrc, priority = false }
           blurDataURL={blurDataURL}
         />
       ) : (
-        <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50" />
+        <div className="w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 border border-primary/10 flex items-center justify-center p-6 relative overflow-hidden select-none">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:16px_16px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-30" />
+          <div className="flex flex-col items-center gap-2 relative z-10 text-center">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs shadow-sm">
+              {title.substring(0, 2).toUpperCase()}
+            </div>
+            <span className="text-sm font-extrabold tracking-tight font-heading text-white max-w-[180px]">
+              {title}
+            </span>
+          </div>
+        </div>
       )}
       
       {/* Video Overlay */}

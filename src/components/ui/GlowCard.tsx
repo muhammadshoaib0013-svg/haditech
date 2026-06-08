@@ -42,16 +42,16 @@ export const GlowCard = ({ children, className = "" }: { children: React.ReactNo
       onBlur={handleBlur}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className={`relative rounded-2xl border border-border bg-card/40 backdrop-blur-sm overflow-hidden p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${className}`}
+      className={`relative rounded-2xl border border-border bg-card overflow-hidden p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${className}`}
     >
       <div
         className="pointer-events-none absolute -inset-px opacity-0 transition duration-300 z-0"
         style={{
           opacity,
-          background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, hsl(var(--primary) / 0.15), transparent 40%)`,
+          background: `radial-gradient(650px circle at ${position.x}px ${position.y}px, hsl(var(--primary) / 0.04), transparent 40%)`,
         }}
       />
-      <div className="relative z-10">{children}</div>
+      <div className="relative z-10 flex flex-col h-full w-full">{children}</div>
     </div>
   );
 };

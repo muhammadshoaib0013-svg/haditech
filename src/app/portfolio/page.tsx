@@ -31,7 +31,7 @@ export default function PortfolioPage() {
       </FadeInSection>
 
       <FadeInSection delay={0.1}>
-        <div className="flex flex-col md:flex-row gap-6 items-center justify-between bg-card/30 p-4 rounded-2xl border border-border backdrop-blur-sm">
+        <div className="flex flex-col md:flex-row gap-6 items-center justify-between bg-card p-4 rounded-2xl border border-border shadow-sm">
           <FilterPills 
             options={categories} 
             active={activeFilter} 
